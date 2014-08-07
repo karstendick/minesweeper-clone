@@ -41,9 +41,9 @@
             (mine? board (inc r) (dec c) num-rows num-cols)
             (mine? board (dec r) (dec c) num-rows num-cols)])))
 
-(def b [[0 1 2]
-        [3 4 5]
-        [6 7 8]])
+; (def b [[0 1 2]
+;         [3 4 5]
+;         [6 7 8]])
 
 ; Assert that v has num-rows*num-cols entries
 (defn vector-to-board
@@ -84,6 +84,24 @@
   []
   (print-board (random-board num-rows num-rows num-mines)))
 
+(defn make-mask
+  [num-rows num-cols]
+  (let [num-cells (total-cells num-rows num-cols)
+        v (into [] (repeat num-cells "H"))]
+    (vector-to-board v num-rows num-cols)))
+
+; TODO: If this cell is flagged, return mask unchanged
+; TODO: If this cell is 0, reveal all ajoining numbered cells
+(defn click-cell
+  [r c board mask]
+  (assoc-in mask [r c] (cell-at board r c)))
+
+; TODO: If this cell is flagged, unflag it
+; TODO: If this cell is revealed, return mask unchanged
+(defn flag-cell
+  [r c board mask]
+  (assoc-in mask [r c] "F"))
+
 (defn get-input
   [prompt]
   (println prompt "--> ")
@@ -91,13 +109,23 @@
 
 (defn play-game
   []
-  (loop [board (calc-board (random-board num-rows num-cols num-mines) num-rows num-cols)]
+  (loop [board (calc-board (random-board num-rows num-cols num-mines) num-rows num-cols)
+         mask (make-mask num-rows num-cols)]
     (print-board board)
+    (println)
+    (print-board mask)
     ;; Using read-string like this is super dangerous!
-    (let [[r c] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
-      (if (mine? board r c num-rows num-cols)
-        (println "Game over!")
-          (recur board)))))
+    (let [[r c & op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))
+          op (first op)]
+      (if (or (= r 'q)
+              (= c 'q)
+              (= op 'q))
+        (println "Good bye!")
+        (if (= op 'f)
+          (recur board (flag-cell r c board mask))
+          (if (mine? board r c num-rows num-cols)
+            (println "Game over!")
+            (recur board (click-cell r c board mask))))))))
 
 
 
