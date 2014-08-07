@@ -17,6 +17,11 @@
   [num-rows num-cols]
   (* num-rows num-cols))
 
+(defn in-bounds?
+  [r c]
+  (and (<= 0 r (dec num-rows))
+       (<= 0 c (dec num-cols))))
+
 
 (defn cell-at
   "Takes a vector of vectors and returns the value at
@@ -26,8 +31,7 @@
 
 (defn mine?
   [board r c num-rows num-cols]
-  (and (<= 0 r (dec num-rows))
-       (<= 0 c (dec num-cols))
+  (and (in-bounds? r c)
        (= "M" (cell-at board r c))))
 
 (defn count-neighbors
@@ -92,12 +96,39 @@
         v (into [] (repeat num-cells "H"))]
     (vector-to-board v num-rows num-cols)))
 
-; TODO: If this cell is 0, reveal all ajoining numbered cells
+
+(comment
+  [(mine? board r (dec c) num-rows num-cols)
+   (mine? board r (inc c) num-rows num-cols)
+   (mine? board (dec r) c num-rows num-cols)
+   (mine? board (inc r) c num-rows num-cols)
+   (mine? board (inc r) (inc c) num-rows num-cols)
+   (mine? board (dec r) (inc c) num-rows num-cols)
+   (mine? board (inc r) (dec c) num-rows num-cols)
+   (mine? board (dec r) (dec c) num-rows num-cols)]
+  )
+
 (defn click-cell
   [r c board mask]
-  (if (= "F" (cell-at mask r c))
+  (if (or (= "F" (cell-at mask r c)) ; Flagged cell
+          (not (in-bounds? r c))     ; Not a valid cell
+          (= (cell-at board r c)     ; Cell already revealed
+             (cell-at mask r c)))
     mask
-    (assoc-in mask [r c] (cell-at board r c))))
+    (if (= 0 (cell-at board r c))
+      ; Click this cell and
+      ; recursively click all its neighbors
+      (->> (assoc-in mask [r c] (cell-at board r c))
+           (click-cell r (dec c) board)
+           (click-cell r (inc c) board)
+           (click-cell (dec r) c board)
+           (click-cell (inc r) c board)
+           (click-cell (inc r) (inc c) board)
+           (click-cell (dec r) (inc c) board)
+           (click-cell (inc r) (dec c) board)
+           (click-cell (dec r) (dec c) board))
+      ; Reveal this cell
+      (assoc-in mask [r c] (cell-at board r c)))))
 
 (defn flag-cell
   [r c board mask]
