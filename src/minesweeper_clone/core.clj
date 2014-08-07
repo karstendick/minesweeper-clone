@@ -96,18 +96,7 @@
         v (into [] (repeat num-cells "H"))]
     (vector-to-board v num-rows num-cols)))
 
-
-(comment
-  [(mine? board r (dec c) num-rows num-cols)
-   (mine? board r (inc c) num-rows num-cols)
-   (mine? board (dec r) c num-rows num-cols)
-   (mine? board (inc r) c num-rows num-cols)
-   (mine? board (inc r) (inc c) num-rows num-cols)
-   (mine? board (dec r) (inc c) num-rows num-cols)
-   (mine? board (inc r) (dec c) num-rows num-cols)
-   (mine? board (dec r) (dec c) num-rows num-cols)]
-  )
-
+; TODO: Change nested ifs to conds
 (defn click-cell
   [r c board mask]
   (if (or (= "F" (cell-at mask r c)) ; Flagged cell
@@ -130,6 +119,7 @@
       ; Reveal this cell
       (assoc-in mask [r c] (cell-at board r c)))))
 
+; TODO: Change nested ifs to conds
 (defn flag-cell
   [r c board mask]
   (if (= "F" (cell-at mask r c))
@@ -137,6 +127,13 @@
     (if (= "H" (cell-at mask r c))
     (assoc-in mask [r c] "F")
     mask)))
+
+(defn game-over?
+  [board mask r c]
+  (and (= "H" (cell-at mask r c))            ; cell is unrevealed
+       (mine? board r c num-rows num-cols))) ; cell has a mine
+
+; TODO: Write a game-won? function and wire it in
 
 (defn get-input
   [prompt]
@@ -151,15 +148,14 @@
     (println)
     (print-board mask)
     ;; Using read-string like this is super dangerous!
-    (let [[r c & op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))
-          op (first op)]
+    (let [[r c op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
       (if (or (= r 'q)
               (= c 'q)
               (= op 'q))
         (println "Good bye!")
         (if (= op 'f)
           (recur board (flag-cell r c board mask))
-          (if (mine? board r c num-rows num-cols)
+          (if (game-over? board mask r c)
             (println "Game over!")
             (recur board (click-cell r c board mask))))))))
 
