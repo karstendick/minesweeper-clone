@@ -66,12 +66,14 @@
 
 (defn calc-board
   [board num-rows num-cols]
-  (for [r (range num-rows)
-        c (range num-cols)]
+  (vector-to-board
+   (for [r (range num-rows)
+         c (range num-cols)]
 
-    (if (mine? board r c num-rows num-cols)
-      (cell-at board r c)
-      (count-neighbors board r c))))
+     (if (mine? board r c num-rows num-cols)
+       (cell-at board r c)
+       (count-neighbors board r c)))
+   num-rows num-cols))
 
 (defn print-board
   [board]
@@ -81,6 +83,21 @@
 (defn sample-board
   []
   (print-board (random-board num-rows num-rows num-mines)))
+
+(defn get-input
+  [prompt]
+  (println prompt "--> ")
+  (read-line))
+
+(defn play-game
+  []
+  (loop [board (calc-board (random-board num-rows num-cols num-mines) num-rows num-cols)]
+    (print-board board)
+    (let [r (Integer. (get-input "row"))
+          c (Integer. (get-input "col"))]
+      (if (mine? board r c num-rows num-cols)
+        (println "Game over!")
+          (recur board)))))
 
 
 
