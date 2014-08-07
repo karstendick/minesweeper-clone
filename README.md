@@ -1,14 +1,10 @@
 # minesweeper-clone
 
-A Clojure library designed to ... well, that part is up to you.
-
-## Usage
-
-FIXME
+A little program to play the classic game Minesweeper. Maybe it'll even provide some more info.
 
 ## License
 
-Copyright © 2014 FIXME
+Copyright © 2014 Joshua Karstendick
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
