@@ -93,8 +93,8 @@
   []
   (loop [board (calc-board (random-board num-rows num-cols num-mines) num-rows num-cols)]
     (print-board board)
-    (let [r (Integer. (get-input "row"))
-          c (Integer. (get-input "col"))]
+    ;; Using read-string like this is super dangerous!
+    (let [[r c] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
       (if (mine? board r c num-rows num-cols)
         (println "Game over!")
           (recur board)))))
