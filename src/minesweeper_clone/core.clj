@@ -19,8 +19,10 @@
 
 
 (defn cell-at
-  [board r c]
-  (get-in board [r c]))
+  "Takes a vector of vectors and returns the value at
+  the given row and column"
+  [vv r c]
+  (get-in vv [r c]))
 
 (defn mine?
   [board r c num-rows num-cols]
@@ -90,17 +92,20 @@
         v (into [] (repeat num-cells "H"))]
     (vector-to-board v num-rows num-cols)))
 
-; TODO: If this cell is flagged, return mask unchanged
 ; TODO: If this cell is 0, reveal all ajoining numbered cells
 (defn click-cell
   [r c board mask]
-  (assoc-in mask [r c] (cell-at board r c)))
+  (if (= "F" (cell-at mask r c))
+    mask
+    (assoc-in mask [r c] (cell-at board r c))))
 
-; TODO: If this cell is flagged, unflag it
-; TODO: If this cell is revealed, return mask unchanged
 (defn flag-cell
   [r c board mask]
-  (assoc-in mask [r c] "F"))
+  (if (= "F" (cell-at mask r c))
+    (assoc-in mask [r c] "H")
+    (if (= "H" (cell-at mask r c))
+    (assoc-in mask [r c] "F")
+    mask)))
 
 (defn get-input
   [prompt]
