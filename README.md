@@ -2,6 +2,12 @@
 
 A little program to play the classic game Minesweeper. Maybe it'll even provide some more info.
 
+## How to run
+```
+lein repl
+(play-game)
+```
+
 ## License
 
 Copyright © 2014 Joshua Karstendick

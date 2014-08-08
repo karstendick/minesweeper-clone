@@ -141,11 +141,14 @@
   (println prompt "--> ")
   (read-line))
 
+
+; TODO: If the first click of the game is on a mine,
+; generate a new board until it's not. You can't lose on the first click.
 (defn play-game
   []
   (loop [board (calc-board (random-board num-rows num-cols num-mines) num-rows num-cols)
          mask (make-mask num-rows num-cols)]
-    (print-board board)
+    ;(print-board board)
     (println)
     (print-board mask)
     (if (game-won? board mask)
