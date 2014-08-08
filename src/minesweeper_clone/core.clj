@@ -121,6 +121,13 @@
       (assoc-in mask [r c] "F")
       mask)))
 
+; Should this just be rolled into click-cell? (iOS app does this; Windows does not)
+; TODO: Write middle-click-cell fn
+; If the current cell is a number
+; and that number is equal to the number of flagged neighbors
+; and all flagged neighbors are correct,
+; reveal all neighbors of this cell (using click-cell fn)
+
 (defn game-over?
   [board mask r c]
   (and (= "H" (cell-at mask r c))            ; cell is unrevealed
