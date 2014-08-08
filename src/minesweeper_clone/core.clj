@@ -1,10 +1,5 @@
 (ns minesweeper-clone.core)
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
-
 ;; [num-rows num-cols num-mines]
 (def board-defaults {:beginner     [9 9 10]
                      :intermediate [16 16 40]
@@ -12,6 +7,9 @@
 (def num-rows 9)
 (def num-cols 9)
 (def num-mines 10)
+;(def num-mines 1)
+;(def num-mines 81)
+;(def num-mines 0)
 
 (defn total-cells
   [num-rows num-cols]
@@ -37,19 +35,15 @@
 (defn count-neighbors
   [board r c]
   (count
-   (filter true?
-           [(mine? board r (dec c) num-rows num-cols)
-            (mine? board r (inc c) num-rows num-cols)
-            (mine? board (dec r) c num-rows num-cols)
-            (mine? board (inc r) c num-rows num-cols)
-            (mine? board (inc r) (inc c) num-rows num-cols)
-            (mine? board (dec r) (inc c) num-rows num-cols)
-            (mine? board (inc r) (dec c) num-rows num-cols)
-            (mine? board (dec r) (dec c) num-rows num-cols)])))
-
-; (def b [[0 1 2]
-;         [3 4 5]
-;         [6 7 8]])
+    (filter true?
+            [(mine? board r (dec c) num-rows num-cols)
+             (mine? board r (inc c) num-rows num-cols)
+             (mine? board (dec r) c num-rows num-cols)
+             (mine? board (inc r) c num-rows num-cols)
+             (mine? board (inc r) (inc c) num-rows num-cols)
+             (mine? board (dec r) (inc c) num-rows num-cols)
+             (mine? board (inc r) (dec c) num-rows num-cols)
+             (mine? board (dec r) (dec c) num-rows num-cols)])))
 
 ; Assert that v has num-rows*num-cols entries
 (defn vector-to-board
@@ -73,13 +67,12 @@
 (defn calc-board
   [board num-rows num-cols]
   (vector-to-board
-   (for [r (range num-rows)
-         c (range num-cols)]
-
-     (if (mine? board r c num-rows num-cols)
-       (cell-at board r c)
-       (count-neighbors board r c)))
-   num-rows num-cols))
+    (for [r (range num-rows)
+          c (range num-cols)]
+      (if (mine? board r c num-rows num-cols)
+        (cell-at board r c)
+        (count-neighbors board r c)))
+    num-rows num-cols))
 
 (defn print-board
   [board]
@@ -125,15 +118,23 @@
   (if (= "F" (cell-at mask r c))
     (assoc-in mask [r c] "H")
     (if (= "H" (cell-at mask r c))
-    (assoc-in mask [r c] "F")
-    mask)))
+      (assoc-in mask [r c] "F")
+      mask)))
 
 (defn game-over?
   [board mask r c]
   (and (= "H" (cell-at mask r c))            ; cell is unrevealed
        (mine? board r c num-rows num-cols))) ; cell has a mine
 
-; TODO: Write a game-won? function and wire it in
+(defn game-won?
+  [board mask]
+  (every? true?
+          (for [r (range num-rows)
+                c (range num-cols)]
+            (let [board-cell (cell-at board r c)
+                  mask-cell (cell-at mask r c)]
+              (or (= board-cell mask-cell)  ; cell is revealed
+                  (= "M" board-cell))))))   ; cell is a mine (Don't require mines to be flagged.)
 
 (defn get-input
   [prompt]
@@ -147,17 +148,19 @@
     (print-board board)
     (println)
     (print-board mask)
-    ;; Using read-string like this is super dangerous!
-    (let [[r c op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
-      (if (or (= r 'q)
-              (= c 'q)
-              (= op 'q))
-        (println "Good bye!")
-        (if (= op 'f)
-          (recur board (flag-cell r c board mask))
-          (if (game-over? board mask r c)
-            (println "Game over!")
-            (recur board (click-cell r c board mask))))))))
+    (if (game-won? board mask)
+      (println "You won!")
+      ;; Using read-string like this is super dangerous!
+      (let [[r c op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
+        (if (or (= r 'q)
+                (= c 'q)
+                (= op 'q))
+          (println "Good bye!")
+          (if (= op 'f)
+            (recur board (flag-cell r c board mask))
+            (if (game-over? board mask r c)
+              (println "Game over!")
+              (recur board (click-cell r c board mask)))))))))
 
 
 
