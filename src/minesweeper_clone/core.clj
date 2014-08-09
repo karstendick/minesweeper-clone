@@ -4,9 +4,9 @@
 (def board-defaults {:beginner     [9 9 10]
                      :intermediate [16 16 40]
                      :expert       [16 30 99]})
-(def num-rows 9)
-(def num-cols 9)
-(def num-mines 10)
+;(def num-rows 9)
+;(def num-cols 9)
+;(def num-mines 10)
 ;(def num-mines 1)
 ;(def num-mines 81)
 ;(def num-mines 0)
@@ -16,7 +16,7 @@
   (* num-rows num-cols))
 
 (defn in-bounds?
-  [r c]
+  [r c num-rows num-cols]
   (and (<= 0 r (dec num-rows))
        (<= 0 c (dec num-cols))))
 
@@ -29,11 +29,11 @@
 
 (defn mine?
   [board r c num-rows num-cols]
-  (and (in-bounds? r c)
+  (and (in-bounds? r c num-rows num-cols)
        (= "M" (cell-at board r c))))
 
 (defn count-neighbors
-  [board r c]
+  [board r c num-rows num-cols]
   (count
     (filter true?
             [(mine? board r (dec c) num-rows num-cols)
@@ -71,7 +71,7 @@
           c (range num-cols)]
       (if (mine? board r c num-rows num-cols)
         (cell-at board r c)
-        (count-neighbors board r c)))
+        (count-neighbors board r c num-rows num-cols)))
     num-rows num-cols))
 
 (defn print-board
@@ -91,9 +91,9 @@
 
 ; TODO: Change nested ifs to conds
 (defn click-cell
-  [r c board mask]
+  [r c board num-rows num-cols mask]
   (if (or (= "F" (cell-at mask r c)) ; Flagged cell
-          (not (in-bounds? r c))     ; Not a valid cell
+          (not (in-bounds? r c num-rows num-cols))     ; Not a valid cell
           (= (cell-at board r c)     ; Cell already revealed
              (cell-at mask r c)))
     mask
@@ -101,14 +101,14 @@
       ; Click this cell and
       ; recursively click all its neighbors
       (->> (assoc-in mask [r c] (cell-at board r c))
-           (click-cell r (dec c) board)
-           (click-cell r (inc c) board)
-           (click-cell (dec r) c board)
-           (click-cell (inc r) c board)
-           (click-cell (inc r) (inc c) board)
-           (click-cell (dec r) (inc c) board)
-           (click-cell (inc r) (dec c) board)
-           (click-cell (dec r) (dec c) board))
+           (click-cell r (dec c) board num-rows num-cols)
+           (click-cell r (inc c) board num-rows num-cols)
+           (click-cell (dec r) c board num-rows num-cols)
+           (click-cell (inc r) c board num-rows num-cols)
+           (click-cell (inc r) (inc c) board num-rows num-cols)
+           (click-cell (dec r) (inc c) board num-rows num-cols)
+           (click-cell (inc r) (dec c) board num-rows num-cols)
+           (click-cell (dec r) (dec c) board num-rows num-cols))
       ; Reveal this cell
       (assoc-in mask [r c] (cell-at board r c)))))
 
@@ -129,12 +129,12 @@
 ; reveal all neighbors of this cell (using click-cell fn)
 
 (defn game-over?
-  [board mask r c]
+  [board mask r c num-rows num-cols]
   (and (= "H" (cell-at mask r c))            ; cell is unrevealed
        (mine? board r c num-rows num-cols))) ; cell has a mine
 
 (defn game-won?
-  [board mask]
+  [board mask num-rows num-cols]
   (every? true?
           (for [r (range num-rows)
                 c (range num-cols)]
@@ -153,24 +153,25 @@
 ; generate a new board until it's not. You can't lose on the first click.
 (defn play-game
   []
-  (loop [board (calc-board (random-board num-rows num-cols num-mines) num-rows num-cols)
-         mask (make-mask num-rows num-cols)]
-    ;(print-board board)
-    (println)
-    (print-board mask)
-    (if (game-won? board mask)
-      (println "You won!")
-      ;; Using read-string like this is super dangerous!
-      (let [[r c op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
-        (if (or (= r 'q)
-                (= c 'q)
-                (= op 'q))
-          (println "Good bye!")
-          (if (= op 'f)
-            (recur board (flag-cell r c board mask))
-            (if (game-over? board mask r c)
-              (println "Game over!")
-              (recur board (click-cell r c board mask)))))))))
+  (let [[num-rows num-cols num-mines] (:beginner board-defaults)]
+    (loop [board (calc-board (random-board num-rows num-cols num-mines) num-rows num-cols)
+           mask (make-mask num-rows num-cols)]
+      (print-board board)
+      (println)
+      (print-board mask)
+      (if (game-won? board mask num-rows num-cols)
+        (println "You won!")
+        ;; Using read-string like this is super dangerous!
+        (let [[r c op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
+          (if (or (= r 'q)
+                  (= c 'q)
+                  (= op 'q))
+            (println "Good bye!")
+            (if (= op 'f)
+              (recur board (flag-cell r c board mask))
+              (if (game-over? board mask r c num-rows num-cols)
+                (println "Game over!")
+                (recur board (click-cell r c board num-rows num-cols mask))))))))))
 
 
 
