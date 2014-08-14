@@ -46,7 +46,7 @@
              (mine? board (dec r) (dec c) num-rows num-cols)])))
 
 ; Assert that v has num-rows*num-cols entries
-(defn vector-to-board
+(defn vector->board
   [v num-rows num-cols]
   (into [] (map vec (partition num-cols v))))
 
@@ -61,12 +61,12 @@
         unrandom-vector (into (repeat num-mines "M")
                               (repeat num-empty-cells "_"))
         random-vector (shuffle unrandom-vector)
-        random-board (vector-to-board random-vector num-rows num-cols)]
+        random-board (vector->board random-vector num-rows num-cols)]
     random-board))
 
 (defn calc-board
   [board num-rows num-cols]
-  (vector-to-board
+  (vector->board
     (for [r (range num-rows)
           c (range num-cols)]
       (if (mine? board r c num-rows num-cols)
@@ -81,20 +81,20 @@
 
 (defn sample-board
   []
-  (print-board (random-board num-rows num-rows num-mines)))
+  (let [[num-rows num-cols num-mines] (:beginner board-defaults)]
+    (print-board (random-board num-rows num-rows num-mines))))
 
 (defn make-mask
   [num-rows num-cols]
   (let [num-cells (total-cells num-rows num-cols)
         v (into [] (repeat num-cells "H"))]
-    (vector-to-board v num-rows num-cols)))
+    (vector->board v num-rows num-cols)))
 
-; TODO: Change nested ifs to conds
 (defn click-cell
   [r c board num-rows num-cols mask]
   (if (or (= "F" (cell-at mask r c)) ; Flagged cell
-          (not (in-bounds? r c num-rows num-cols))     ; Not a valid cell
-          (= (cell-at board r c)     ; Cell already revealed
+          (not (in-bounds? r c num-rows num-cols)) ; Not a valid cell
+          (= (cell-at board r c) ; Cell already revealed
              (cell-at mask r c)))
     mask
     (if (= 0 (cell-at board r c))
@@ -112,14 +112,12 @@
       ; Reveal this cell
       (assoc-in mask [r c] (cell-at board r c)))))
 
-; TODO: Change nested ifs to conds
 (defn flag-cell
   [r c board mask]
-  (if (= "F" (cell-at mask r c))
-    (assoc-in mask [r c] "H")
-    (if (= "H" (cell-at mask r c))
-      (assoc-in mask [r c] "F")
-      mask)))
+  (condp = (cell-at mask r c)
+    "H" (assoc-in mask [r c] "F") ; flag an unrevealed cell
+    "F" (assoc-in mask [r c] "H") ; unflag a flagged cell
+    mask)) ; do nothing otherwise
 
 ; Should this just be rolled into click-cell? (iOS app does this; Windows does not)
 ; TODO: Write middle-click-cell fn
