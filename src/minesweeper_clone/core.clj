@@ -48,7 +48,7 @@
 ; Assert that v has num-rows*num-cols entries
 (defn vector->board
   [v num-rows num-cols]
-  (into [] (map vec (partition num-cols v))))
+  (vec (map vec (partition num-cols v))))
 
 ; Not a pure function, of course,
 ; as this generates a random different board each time.
@@ -87,7 +87,7 @@
 (defn make-mask
   [num-rows num-cols]
   (let [num-cells (total-cells num-rows num-cols)
-        v (into [] (repeat num-cells "H"))]
+        v (vec (repeat num-cells "H"))]
     (vector->board v num-rows num-cols)))
 
 (defn click-cell
