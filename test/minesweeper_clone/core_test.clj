@@ -101,6 +101,8 @@
 ; click-cell
 ; game-over?
 ; game-won?
+; calc-game-won
+; calc-game-over
 
 
 

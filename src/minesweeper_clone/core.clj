@@ -109,8 +109,10 @@
            (click-cell (dec r) (inc c) board num-rows num-cols)
            (click-cell (inc r) (dec c) board num-rows num-cols)
            (click-cell (dec r) (dec c) board num-rows num-cols))
-      ; Reveal this cell
-      (assoc-in mask [r c] (cell-at board r c)))))
+      (if (= "M" (cell-at board r c)) ; Cell is  a mine
+        (assoc-in mask [r c] "B") ; Kaboom!
+        ; Otherwise, just reveal this cell
+        (assoc-in mask [r c] (cell-at board r c))))))
 
 (defn flag-cell
   [r c board mask]
@@ -127,9 +129,8 @@
 ; reveal all neighbors of this cell (using click-cell fn)
 
 (defn game-over?
-  [board mask r c num-rows num-cols]
-  (and (= "H" (cell-at mask r c))            ; cell is unrevealed
-       (mine? board r c num-rows num-cols))) ; cell has a mine
+  [mask]
+  (some #{"B"} (apply concat mask)))
 
 (defn game-won?
   [board mask num-rows num-cols]
@@ -146,6 +147,23 @@
   (println prompt "--> ")
   (read-line))
 
+; TODO: calc-game-over
+; assoc-in mask every mine on board
+; For every cell that is flagged incorrectly,
+; assoc-in "X"
+
+; TODO: calc-game-won
+; For every cell that is not yet flagged,
+; flag it
+
+; TODO: Keep track of # of mines left unflagged:
+; this starts at num-mines,
+; goes down every time you flag-cell,
+; and will be 0 when game-won? is true
+
+; TODO: Keep track of time.
+; TODO: Save best times for each difficulty level.
+
 
 ; TODO: If the first click of the game is on a mine,
 ; generate a new board until it's not. You can't lose on the first click.
@@ -159,16 +177,16 @@
       (print-board mask)
       (if (game-won? board mask num-rows num-cols)
         (println "You won!")
-        ;; Using read-string like this is super dangerous!
-        (let [[r c op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
-          (if (or (= r 'q)
-                  (= c 'q)
-                  (= op 'q))
-            (println "Good bye!")
-            (if (= op 'f)
-              (recur board (flag-cell r c board mask))
-              (if (game-over? board mask r c num-rows num-cols)
-                (println "Game over!")
+        (if (game-over? mask)
+          (println "Game over!")
+          ;; Using read-string like this is super dangerous!
+          (let [[r c op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
+            (if (or (= r 'q)
+                    (= c 'q)
+                    (= op 'q))
+              (println "Good bye!")
+              (if (= op 'f)
+                (recur board (flag-cell r c board mask))
                 (recur board (click-cell r c board num-rows num-cols mask))))))))))
 
 
