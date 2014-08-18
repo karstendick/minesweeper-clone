@@ -151,6 +151,19 @@
 ; assoc-in mask every mine on board
 ; For every cell that is flagged incorrectly,
 ; assoc-in "X"
+(defn reveal-all-mines
+  [mask board num-rows num-cols]
+  (let [flat-mask (apply concat mask)
+        flat-board (apply concat board)
+        reveal-mine-fn (fn [m b] (if (= b "M")
+                                   b
+                                   m))
+        flat-revealed-mask (map reveal-mine-fn flat-mask flat-board)]
+    (vector->board flat-revealed-mask num-rows num-cols)))
+
+(defn calc-game-over
+  [mask board num-rows num-cols]
+  nil)
 
 ; TODO: calc-game-won
 ; For every cell that is not yet flagged,
