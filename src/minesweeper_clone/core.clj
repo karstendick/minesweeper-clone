@@ -110,7 +110,7 @@
            (click-cell (inc r) (dec c) board num-rows num-cols)
            (click-cell (dec r) (dec c) board num-rows num-cols))
       (if (= "M" (cell-at board r c)) ; Cell is  a mine
-        (assoc-in mask [r c] "B") ; Kaboom!
+        (assoc-in mask [r c] "B") ; Boom!
         ; Otherwise, just reveal this cell
         (assoc-in mask [r c] (cell-at board r c))))))
 
@@ -132,6 +132,7 @@
   [mask]
   (some #{"B"} (apply concat mask)))
 
+; TODO: use map-mask here instead of for loop
 (defn game-won?
   [board mask num-rows num-cols]
   (every? true?
@@ -147,31 +148,54 @@
   (println prompt "--> ")
   (read-line))
 
-; TODO: calc-game-over
+(defn map-mask
+  "f is a fn that takes a mask cell and a board cell.
+  Maps f over all cells."
+  [f board num-rows num-cols mask]
+  (let [flat-mask (apply concat mask)
+        flat-board (apply concat board)
+        flat-mapped-mask (map f flat-mask flat-board)]
+    (vector->board flat-mapped-mask num-rows num-cols)))
+
+; TODO: test calc-game-over
 ; assoc-in mask every mine on board
 ; For every cell that is flagged incorrectly,
 ; assoc-in "X"
-(defn reveal-all-mines
-  [mask board num-rows num-cols]
-  (let [flat-mask (apply concat mask)
-        flat-board (apply concat board)
-        reveal-mine-fn (fn [m b] (if (= b "M")
-                                   b
-                                   m))
-        flat-revealed-mask (map reveal-mine-fn flat-mask flat-board)]
-    (vector->board flat-revealed-mask num-rows num-cols)))
+(defn reveal-mines
+  [board num-rows num-cols mask]
+  (map-mask (fn [m b] (if (= b "M")
+                        b
+                        m))
+            board num-rows num-cols mask))
+
+(defn reveal-incorrect-flags
+  [board num-rows num-cols mask]
+  (map-mask (fn [m b] (if (and (= m "F")
+                               (not= b "M"))
+                        "X"
+                        m))
+            board num-rows num-cols mask))
 
 (defn calc-game-over
   [mask board num-rows num-cols]
-  nil)
+  (->> mask
+       (reveal-mines board num-rows num-cols)
+       (reveal-incorrect-flags board num-rows num-cols)))
 
-; TODO: calc-game-won
+; TODO: test calc-game-won
 ; For every cell that is not yet flagged,
 ; flag it
+(defn calc-game-won
+  [board num-rows num-cols mask]
+  (map-mask (fn [m b] (if  (= b "M")
+                        "F"
+                        m))
+            board num-rows num-cols mask))
 
 ; TODO: Keep track of # of mines left unflagged:
 ; this starts at num-mines,
-; goes down every time you flag-cell,
+; goes down every time you flag and unflagged cell,
+; (goes up when you unflag a flagged cell)
 ; and will be 0 when game-won? is true
 
 ; TODO: Keep track of time.
