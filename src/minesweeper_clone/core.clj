@@ -107,6 +107,8 @@
         v (vec (repeat num-cells "H"))]
     (vector->board v num-rows num-cols)))
 
+(declare click-cell)
+
 (defn click-neighbors
   [r c board num-rows num-cols mask]
   (->> mask
