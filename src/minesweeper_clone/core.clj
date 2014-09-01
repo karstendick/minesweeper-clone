@@ -32,18 +32,30 @@
   (and (in-bounds? r c num-rows num-cols)
        (= "M" (cell-at board r c))))
 
+(defn flag?
+  [mask r c num-rows num-cols]
+  (and (in-bounds? r c num-rows num-cols)
+       (= "F" (cell-at mask r c))))
+
+(defn unrevealed?
+  [mask r c num-rows num-cols]
+  (and (in-bounds? r c num-rows num-cols)
+       (= "H" (cell-at mask r c))))
+
 (defn count-neighbors
-  [board r c num-rows num-cols]
-  (count
-   (filter true?
-           [(mine? board r (dec c) num-rows num-cols)
-            (mine? board r (inc c) num-rows num-cols)
-            (mine? board (dec r) c num-rows num-cols)
-            (mine? board (inc r) c num-rows num-cols)
-            (mine? board (inc r) (inc c) num-rows num-cols)
-            (mine? board (dec r) (inc c) num-rows num-cols)
-            (mine? board (inc r) (dec c) num-rows num-cols)
-            (mine? board (dec r) (dec c) num-rows num-cols)])))
+  ([board r c num-rows num-cols]
+   (count-neighbors board r c num-rows num-cols mine?))
+  ([board r c num-rows num-cols pred?]
+   (count
+    (filter true?
+            [(pred? board r (dec c) num-rows num-cols)
+             (pred? board r (inc c) num-rows num-cols)
+             (pred? board (dec r) c num-rows num-cols)
+             (pred? board (inc r) c num-rows num-cols)
+             (pred? board (inc r) (inc c) num-rows num-cols)
+             (pred? board (dec r) (inc c) num-rows num-cols)
+             (pred? board (inc r) (dec c) num-rows num-cols)
+             (pred? board (dec r) (dec c) num-rows num-cols)]))))
 
 ; Assert that v has num-rows*num-cols entries
 (defn vector->board
@@ -95,6 +107,18 @@
         v (vec (repeat num-cells "H"))]
     (vector->board v num-rows num-cols)))
 
+(defn click-neighbors
+  [r c board num-rows num-cols mask]
+  (->> mask
+       (click-cell r (dec c) board num-rows num-cols)
+       (click-cell r (inc c) board num-rows num-cols)
+       (click-cell (dec r) c board num-rows num-cols)
+       (click-cell (inc r) c board num-rows num-cols)
+       (click-cell (inc r) (inc c) board num-rows num-cols)
+       (click-cell (dec r) (inc c) board num-rows num-cols)
+       (click-cell (inc r) (dec c) board num-rows num-cols)
+       (click-cell (dec r) (dec c) board num-rows num-cols)))
+
 (defn click-cell
   [r c board num-rows num-cols mask]
   (let [board-cell (cell-at board r c)
@@ -104,17 +128,9 @@
             (= board-cell mask-cell)) ; Cell already revealed
       mask
       (if (= 0 board-cell)
-        ; Click this cell and
-        ; recursively click all its neighbors
+        ; Click this cell and all its neighbors
         (->> (assoc-in mask [r c] board-cell)
-             (click-cell r (dec c) board num-rows num-cols)
-             (click-cell r (inc c) board num-rows num-cols)
-             (click-cell (dec r) c board num-rows num-cols)
-             (click-cell (inc r) c board num-rows num-cols)
-             (click-cell (inc r) (inc c) board num-rows num-cols)
-             (click-cell (dec r) (inc c) board num-rows num-cols)
-             (click-cell (inc r) (dec c) board num-rows num-cols)
-             (click-cell (dec r) (dec c) board num-rows num-cols))
+             (click-neighbors r c board num-rows num-cols))
         (if (mine? board r c num-rows num-cols) ; Cell is  a mine
           (assoc-in mask [r c] "B") ; Boom!
           ; Otherwise, just reveal this cell
@@ -127,12 +143,25 @@
     "F" (assoc-in mask [r c] "H") ; unflag a flagged cell
     mask)) ; do nothing otherwise
 
-; Should this just be rolled into click-cell? (iOS app does this; Windows does not)
-; TODO: Write middle-click-cell fn
+; Should chord-click-cell just be rolled into click-cell?
+; (iOS app does this; Windows does not)
+; Keep this separate for now.
+; We can always do both, then, based on a user setting.
+
 ; If the current cell is a number
 ; and that number is equal to the number of flagged neighbors
 ; and all flagged neighbors are correct,
 ; reveal all neighbors of this cell (using click-cell fn)
+
+(defn chord-click-cell
+  [r c board num-rows num-cols mask]
+  (let [mask-cell (cell-at mask r c)
+        neighboring-flags (count-neighbors mask r c num-rows num-cols flag?)]
+    (if (or (unrevealed? mask r c num-rows num-cols)
+            (flag? board r c num-rows num-cols)
+            (not= mask-cell neighboring-flags))
+      mask
+      (click-neighbors r c board num-rows num-cols mask))))
 
 (defn game-over?
   [mask]

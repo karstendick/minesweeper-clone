@@ -124,6 +124,43 @@
                   [0 2 2]
                   [0 1 "F"]])))
 
+(fact "chord-click-cell"
+      (let [board [[0 1 "M"]
+                   [0 2 2]
+                   [0 1 "M"]]
+            mask [["H" "H" "H"]
+                  ["H" "H" 2]
+                  ["H" 1 "F"]]
+            nr 3
+            nc 3]
+        (fact "does nothing"
+              (fact "to unrevealed cell"
+                    (chord-click-cell 0 0 board nr nc mask) => mask
+                    (chord-click-cell 0 2 board nr nc mask) => mask)
+              (fact "to flagged cell"
+                    (chord-click-cell 2 2 board nr nc mask) => mask)
+              (fact "to cell without enough neighboring flags"
+                    (chord-click-cell 1 2 board nr nc mask) => mask)
+              (let [over-flagged-board [[0 1]
+                                        [1 "M"]]
+                    over-flagged-mask [["H" "F"]
+                                       [1 "F"]]]
+                (fact "to cell with too many neighboring flags"
+                      (chord-click-cell 1 0 over-flagged-board nr nc over-flagged-mask)
+                      => over-flagged-mask)))
+        (fact "goes boom to wrong flag"
+              (chord-click-cell 1 2 board nr nc [["H" "F" "H"]
+                                                 ["H" "H" 2]
+                                                 ["H" 1 "F"]])
+              => [["H" "F" "B"]
+                  ["H" 2 2]
+                  ["H" 1 "F"]])
+        (fact "reveals all neighbors"
+              (chord-click-cell 2 1 board nr nc mask)
+              => [[0 1 "H"]
+                  [0 2 2]
+                  [0 1 "F"]])))
+
 (fact "game-over?"
       (game-over? [["B"]]) => truthy
       (game-over? [["H"]]) => falsey
@@ -200,6 +237,7 @@
         => [[0 1 "F"]
             [0 2 "X"]
             [0 1 "M"]]))
+
 
 
 
