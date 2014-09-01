@@ -114,7 +114,7 @@
            (click-cell (dec r) (inc c) board num-rows num-cols)
            (click-cell (inc r) (dec c) board num-rows num-cols)
            (click-cell (dec r) (dec c) board num-rows num-cols))
-      (if (= "M" (cell-at board r c)) ; Cell is  a mine
+      (if (mine? board r c num-rows num-cols) ; Cell is  a mine
         (assoc-in mask [r c] "B") ; Boom!
         ; Otherwise, just reveal this cell
         (assoc-in mask [r c] (cell-at board r c))))))
@@ -167,7 +167,8 @@
 ; assoc-in "X"
 (defn reveal-mines
   [board num-rows num-cols mask]
-  (map-mask (fn [m b] (if (= b "M")
+  (map-mask (fn [m b] (if (and (= b "M")
+                               (not= m "F"))
                         b
                         m))
             board num-rows num-cols mask))
@@ -181,7 +182,7 @@
             board num-rows num-cols mask))
 
 (defn calc-game-over
-  [mask board num-rows num-cols]
+  [board num-rows num-cols mask]
   (->> mask
        (reveal-mines board num-rows num-cols)
        (reveal-incorrect-flags board num-rows num-cols)))

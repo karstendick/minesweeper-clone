@@ -161,12 +161,47 @@
         (->> mask
              (click-cell 0 2 board nr nc)
              (game-won? board nr nc))
-        => false
-        ))
+        => false))
 
-; TODO: Write tests for:
-; calc-game-won
-; calc-game-over
+(fact "calc-game-won"
+      (let [board [[0 1 "M"]
+                   [0 2 2]
+                   [0 1 "M"]]
+            nr 3
+            nc 3]
+        (calc-game-won board nr nc [[0 1 "H"]
+                                    [0 2 2]
+                                    [0 1 "F"]])
+        => [[0 1 "F"]
+            [0 2 2]
+            [0 1 "F"]]
+        (calc-game-won board nr nc [[0 1 "F"]
+                                    [0 2 2]
+                                    [0 1 "F"]])
+        => [[0 1 "F"]
+            [0 2 2]
+            [0 1 "F"]]))
+
+(fact "calc-game-over"
+      (let [board [[0 1 "M"]
+                   [0 2 2]
+                   [0 1 "M"]]
+            nr 3
+            nc 3]
+        (calc-game-over board nr nc [[0 1 "H"]
+                                     [0 3 2]
+                                     ["B" 2 "F"]])
+        => [[0 1 "M"]
+            [0 3 2]
+            ["B" 2 "F"]]
+        (calc-game-over board nr nc [[0 1 "F"]
+                                     [0 2 "F"]
+                                     [0 1 "H"]])
+        => [[0 1 "F"]
+            [0 2 "X"]
+            [0 1 "M"]]))
+
+
 
 
 
