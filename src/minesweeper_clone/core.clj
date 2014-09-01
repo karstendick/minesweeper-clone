@@ -1,105 +1,27 @@
-(ns minesweeper-clone.core)
+(ns minesweeper-clone.core
+  (:require [minesweeper-clone.mine-util :refer [random-board
+                                                 vector->board
+                                                 mine?
+                                                 flag?
+                                                 unrevealed?
+                                                 total-cells
+                                                 in-bounds?
+                                                 cell-at
+                                                 count-neighbors
+                                                 calc-board
+                                                 map-mask
+                                                 reveal-mines
+                                                 reveal-incorrect-flags]]))
 
 ;; [num-rows num-cols num-mines]
 (def board-defaults {:beginner     [9 9 10]
                      :intermediate [16 16 40]
                      :expert       [16 30 99]})
-;(def num-rows 9)
-;(def num-cols 9)
-;(def num-mines 10)
-;(def num-mines 1)
-;(def num-mines 81)
-;(def num-mines 0)
 
-(defn total-cells
-  [num-rows num-cols]
-  (* num-rows num-cols))
-
-(defn in-bounds?
-  [r c num-rows num-cols]
-  (and (<= 0 r (dec num-rows))
-       (<= 0 c (dec num-cols))))
-
-
-(defn cell-at
-  "Takes a vector of vectors and returns the value at
-  the given row and column"
-  [vv r c]
-  (get-in vv [r c]))
-
-(defn mine?
-  [board r c num-rows num-cols]
-  (and (in-bounds? r c num-rows num-cols)
-       (= "M" (cell-at board r c))))
-
-(defn flag?
-  [mask r c num-rows num-cols]
-  (and (in-bounds? r c num-rows num-cols)
-       (= "F" (cell-at mask r c))))
-
-(defn unrevealed?
-  [mask r c num-rows num-cols]
-  (and (in-bounds? r c num-rows num-cols)
-       (= "H" (cell-at mask r c))))
-
-(defn count-neighbors
-  ([board r c num-rows num-cols]
-   (count-neighbors board r c num-rows num-cols mine?))
-  ([board r c num-rows num-cols pred?]
-   (count
-    (filter true?
-            [(pred? board r (dec c) num-rows num-cols)
-             (pred? board r (inc c) num-rows num-cols)
-             (pred? board (dec r) c num-rows num-cols)
-             (pred? board (inc r) c num-rows num-cols)
-             (pred? board (inc r) (inc c) num-rows num-cols)
-             (pred? board (dec r) (inc c) num-rows num-cols)
-             (pred? board (inc r) (dec c) num-rows num-cols)
-             (pred? board (dec r) (dec c) num-rows num-cols)]))))
-
-; Assert that v has num-rows*num-cols entries
-(defn vector->board
-  [v num-rows num-cols]
-  (vec (map vec (partition num-cols v))))
-
-; Not a pure function, of course,
-; as this generates a random different board each time.
-;
-; Assert that num-mines < num-rows*num-cols
-(defn random-board
+(defn make-board
   [num-rows num-cols num-mines]
-  (let [num-cells (total-cells num-rows num-cols)
-        num-empty-cells (- num-cells num-mines)
-        unrandom-vector (into (repeat num-mines "M")
-                              (repeat num-empty-cells "_"))
-        random-vector (shuffle unrandom-vector)
-        random-board (vector->board random-vector num-rows num-cols)]
-    random-board))
-
-(defn random-beginner-board
-  []
-  (let [[num-rows num-cols num-mines] (:beginner board-defaults)]
-    (random-board num-rows num-cols num-mines)))
-
-(defn calc-board
-  [board num-rows num-cols]
-  (vector->board
-   (for [r (range num-rows)
-         c (range num-cols)]
-     (if (mine? board r c num-rows num-cols)
-       (cell-at board r c)
-       (count-neighbors board r c num-rows num-cols)))
-   num-rows num-cols))
-
-(defn print-board
-  [board]
-  (doseq [row board]
-    (println row)))
-
-(defn sample-board
-  []
-  (let [[num-rows num-cols num-mines] (:beginner board-defaults)]
-    (print-board (random-board num-rows num-rows num-mines))))
+  (->> (random-board num-rows num-cols num-mines)
+       (calc-board num-rows num-cols)))
 
 (defn make-mask
   [num-rows num-cols]
@@ -109,7 +31,7 @@
 
 (declare click-cell)
 
-(defn click-neighbors
+(defn- click-neighbors
   [r c board num-rows num-cols mask]
   (->> mask
        (click-cell r (dec c) board num-rows num-cols)
@@ -169,15 +91,6 @@
   [mask]
   (some #{"B"} (apply concat mask)))
 
-(defn map-mask
-  "f is a fn that takes a mask cell and a board cell.
-  Maps f over all cells."
-  [f board num-rows num-cols mask]
-  (let [flat-mask (apply concat mask)
-        flat-board (apply concat board)
-        flat-mapped-mask (map f flat-mask flat-board)]
-    (vector->board flat-mapped-mask num-rows num-cols)))
-
 (defn game-won?
   [board num-rows num-cols mask]
   (and (not (game-over? mask))
@@ -187,30 +100,6 @@
              mapped-mask (map-mask cell-won? board num-rows num-cols mask)
              flat-mapped-mask (apply concat mapped-mask)]
          (every? true? flat-mapped-mask))))
-
-(defn get-input
-  [prompt]
-  (println prompt "--> ")
-  (read-line))
-
-; assoc-in mask every mine on board
-; For every cell that is flagged incorrectly,
-; assoc-in "X"
-(defn reveal-mines
-  [board num-rows num-cols mask]
-  (map-mask (fn [m b] (if (and (= b "M")
-                               (not= m "F"))
-                        b
-                        m))
-            board num-rows num-cols mask))
-
-(defn reveal-incorrect-flags
-  [board num-rows num-cols mask]
-  (map-mask (fn [m b] (if (and (= m "F")
-                               (not= b "M"))
-                        "X"
-                        m))
-            board num-rows num-cols mask))
 
 (defn calc-game-over
   [board num-rows num-cols mask]
@@ -225,6 +114,26 @@
                         "F"
                         m))
             board num-rows num-cols mask))
+
+(defn print-board
+  [board]
+  (doseq [row board]
+    (println row)))
+
+(defn get-input
+  [prompt]
+  (println prompt "--> ")
+  (read-line))
+
+(defn sample-board
+  []
+  (let [[num-rows num-cols num-mines] (:beginner board-defaults)]
+    (print-board (random-board num-rows num-rows num-mines))))
+
+(defn random-beginner-board
+  []
+  (let [[num-rows num-cols num-mines] (:beginner board-defaults)]
+    (random-board num-rows num-cols num-mines)))
 
 ; TODO: Keep track of # of mines left unflagged:
 ; this starts at num-mines,
@@ -241,24 +150,28 @@
 (defn play-game
   []
   (let [[num-rows num-cols num-mines] (:beginner board-defaults)]
-    (loop [board (calc-board (random-board num-rows num-cols num-mines) num-rows num-cols)
+    (loop [board (make-board num-rows num-cols num-mines)
            mask (make-mask num-rows num-cols)]
       (print-board board)
       (println)
       (print-board mask)
       (if (game-won? board num-rows num-cols mask)
-        (println "You won!")
+        (do
+          (println "You won!")
+          (print-board (calc-game-won board num-rows num-cols mask)))
         (if (game-over? mask)
-          (println "Game over!")
+          (do
+            (println "Game over!")
+            (print-board (calc-game-over board num-rows num-cols mask)))
           ;; Using read-string like this is super dangerous!
           (let [[r c op] (map read-string (clojure.string/split (get-input "row col") #"\s+"))]
-            (if (or (= r 'q)
-                    (= c 'q)
-                    (= op 'q))
+            (if (= r 'q)
               (println "Good bye!")
               (if (= op 'f)
                 (recur board (flag-cell r c board mask))
-                (recur board (click-cell r c board num-rows num-cols mask))))))))))
+                (if (= op 'c)
+                  (recur board (chord-click-cell r c board num-rows num-cols mask))
+                  (recur board (click-cell r c board num-rows num-cols mask)))))))))))
 
 
 

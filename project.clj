@@ -1,4 +1,4 @@
-(defproject minesweeper-clone "0.1.0-SNAPSHOT"
+(defproject minesweeper-clone "0.2.0-SNAPSHOT"
   :description "A Minesweeper clone"
   :url "http://http://karstendick.github.io/"
   :license {:name "Eclipse Public License"
