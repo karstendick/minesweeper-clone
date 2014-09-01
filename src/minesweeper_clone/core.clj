@@ -97,27 +97,28 @@
 
 (defn click-cell
   [r c board num-rows num-cols mask]
-  (if (or (= "F" (cell-at mask r c)) ; Flagged cell
-          (not (in-bounds? r c num-rows num-cols)) ; Not a valid cell
-          (= (cell-at board r c) ; Cell already revealed
-             (cell-at mask r c)))
-    mask
-    (if (= 0 (cell-at board r c))
-      ; Click this cell and
-      ; recursively click all its neighbors
-      (->> (assoc-in mask [r c] (cell-at board r c))
-           (click-cell r (dec c) board num-rows num-cols)
-           (click-cell r (inc c) board num-rows num-cols)
-           (click-cell (dec r) c board num-rows num-cols)
-           (click-cell (inc r) c board num-rows num-cols)
-           (click-cell (inc r) (inc c) board num-rows num-cols)
-           (click-cell (dec r) (inc c) board num-rows num-cols)
-           (click-cell (inc r) (dec c) board num-rows num-cols)
-           (click-cell (dec r) (dec c) board num-rows num-cols))
-      (if (mine? board r c num-rows num-cols) ; Cell is  a mine
-        (assoc-in mask [r c] "B") ; Boom!
-        ; Otherwise, just reveal this cell
-        (assoc-in mask [r c] (cell-at board r c))))))
+  (let [board-cell (cell-at board r c)
+        mask-cell (cell-at mask r c)]
+    (if (or (= "F" mask-cell) ; Flagged cell
+            (not (in-bounds? r c num-rows num-cols)) ; Not a valid cell
+            (= board-cell mask-cell)) ; Cell already revealed
+      mask
+      (if (= 0 board-cell)
+        ; Click this cell and
+        ; recursively click all its neighbors
+        (->> (assoc-in mask [r c] board-cell)
+             (click-cell r (dec c) board num-rows num-cols)
+             (click-cell r (inc c) board num-rows num-cols)
+             (click-cell (dec r) c board num-rows num-cols)
+             (click-cell (inc r) c board num-rows num-cols)
+             (click-cell (inc r) (inc c) board num-rows num-cols)
+             (click-cell (dec r) (inc c) board num-rows num-cols)
+             (click-cell (inc r) (dec c) board num-rows num-cols)
+             (click-cell (dec r) (dec c) board num-rows num-cols))
+        (if (mine? board r c num-rows num-cols) ; Cell is  a mine
+          (assoc-in mask [r c] "B") ; Boom!
+          ; Otherwise, just reveal this cell
+          (assoc-in mask [r c] board-cell))))))
 
 (defn flag-cell
   [r c board mask]
@@ -161,7 +162,6 @@
   (println prompt "--> ")
   (read-line))
 
-; TODO: test calc-game-over
 ; assoc-in mask every mine on board
 ; For every cell that is flagged incorrectly,
 ; assoc-in "X"
@@ -187,9 +187,7 @@
        (reveal-mines board num-rows num-cols)
        (reveal-incorrect-flags board num-rows num-cols)))
 
-; TODO: test calc-game-won
-; For every cell that is not yet flagged,
-; flag it
+; For every mine that is not yet flagged, flag it
 (defn calc-game-won
   [board num-rows num-cols mask]
   (map-mask (fn [m b] (if  (= b "M")
