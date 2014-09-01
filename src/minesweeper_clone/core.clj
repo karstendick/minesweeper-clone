@@ -35,15 +35,15 @@
 (defn count-neighbors
   [board r c num-rows num-cols]
   (count
-    (filter true?
-            [(mine? board r (dec c) num-rows num-cols)
-             (mine? board r (inc c) num-rows num-cols)
-             (mine? board (dec r) c num-rows num-cols)
-             (mine? board (inc r) c num-rows num-cols)
-             (mine? board (inc r) (inc c) num-rows num-cols)
-             (mine? board (dec r) (inc c) num-rows num-cols)
-             (mine? board (inc r) (dec c) num-rows num-cols)
-             (mine? board (dec r) (dec c) num-rows num-cols)])))
+   (filter true?
+           [(mine? board r (dec c) num-rows num-cols)
+            (mine? board r (inc c) num-rows num-cols)
+            (mine? board (dec r) c num-rows num-cols)
+            (mine? board (inc r) c num-rows num-cols)
+            (mine? board (inc r) (inc c) num-rows num-cols)
+            (mine? board (dec r) (inc c) num-rows num-cols)
+            (mine? board (inc r) (dec c) num-rows num-cols)
+            (mine? board (dec r) (dec c) num-rows num-cols)])))
 
 ; Assert that v has num-rows*num-cols entries
 (defn vector->board
@@ -64,15 +64,20 @@
         random-board (vector->board random-vector num-rows num-cols)]
     random-board))
 
+(defn random-beginner-board
+  []
+  (let [[num-rows num-cols num-mines] (:beginner board-defaults)]
+    (random-board num-rows num-cols num-mines)))
+
 (defn calc-board
   [board num-rows num-cols]
   (vector->board
-    (for [r (range num-rows)
-          c (range num-cols)]
-      (if (mine? board r c num-rows num-cols)
-        (cell-at board r c)
-        (count-neighbors board r c num-rows num-cols)))
-    num-rows num-cols))
+   (for [r (range num-rows)
+         c (range num-cols)]
+     (if (mine? board r c num-rows num-cols)
+       (cell-at board r c)
+       (count-neighbors board r c num-rows num-cols)))
+   num-rows num-cols))
 
 (defn print-board
   [board]
@@ -132,22 +137,6 @@
   [mask]
   (some #{"B"} (apply concat mask)))
 
-; TODO: use map-mask here instead of for loop
-(defn game-won?
-  [board mask num-rows num-cols]
-  (every? true?
-          (for [r (range num-rows)
-                c (range num-cols)]
-            (let [board-cell (cell-at board r c)
-                  mask-cell (cell-at mask r c)]
-              (or (= board-cell mask-cell)  ; cell is revealed
-                  (= "M" board-cell))))))   ; cell is a mine (Don't require mines to be flagged.)
-
-(defn get-input
-  [prompt]
-  (println prompt "--> ")
-  (read-line))
-
 (defn map-mask
   "f is a fn that takes a mask cell and a board cell.
   Maps f over all cells."
@@ -156,6 +145,21 @@
         flat-board (apply concat board)
         flat-mapped-mask (map f flat-mask flat-board)]
     (vector->board flat-mapped-mask num-rows num-cols)))
+
+(defn game-won?
+  [board num-rows num-cols mask]
+  (and (not (game-over? mask))
+       (let [cell-won? (fn [m b]
+                         (or (= b m)     ; cell is revealed
+                             (= "M" b))) ; cell is a mine (Don't require mines to be flagged.)
+             mapped-mask (map-mask cell-won? board num-rows num-cols mask)
+             flat-mapped-mask (apply concat mapped-mask)]
+         (every? true? flat-mapped-mask))))
+
+(defn get-input
+  [prompt]
+  (println prompt "--> ")
+  (read-line))
 
 ; TODO: test calc-game-over
 ; assoc-in mask every mine on board
@@ -212,7 +216,7 @@
       (print-board board)
       (println)
       (print-board mask)
-      (if (game-won? board mask num-rows num-cols)
+      (if (game-won? board num-rows num-cols mask)
         (println "You won!")
         (if (game-over? mask)
           (println "Game over!")

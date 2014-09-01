@@ -97,10 +97,74 @@
             (flag-cell 0 0 [[1]] [[1]]) => [[1]]
             (flag-cell 0 0 [["M"]] [["M"]]) => [["M"]]))
 
+(fact "click-cell"
+      (let [board [[0 1 "M"]
+                   [0 2 2]
+                   [0 1 "M"]]
+            mask [["H" "H" "H"]
+                  ["H" "H" 2]
+                  ["H" "H" "F"]]
+            nr 3
+            nc 3]
+        (fact "does nothing"
+              (fact "to flagged cell"
+                    (click-cell 2 2 board nr nc mask) => mask)
+              (fact "to invalid cell"
+                    (click-cell 2 3 board nr nc mask) => mask)
+              (fact "to revealed cell"
+                    (click-cell 1 2 board nr nc mask) => mask))
+        (fact "goes Boom! to unrevealed mine cell"
+              (click-cell 0 2 board nr nc mask) => (assoc-in mask [0 2] "B"))
+        (fact "reveals a non-zero numbered cell"
+              (click-cell 0 1 board nr nc mask) => (assoc-in mask [0 1] 1)
+              (click-cell 1 2 board nr nc mask) => (assoc-in mask [1 2] 2))
+        (fact "reveals all neighbors of a zero cell"
+              (click-cell 0 0 board nr nc mask)
+              => [[0 1 "H"]
+                  [0 2 2]
+                  [0 1 "F"]])))
+
+(fact "game-over?"
+      (game-over? [["B"]]) => truthy
+      (game-over? [["H"]]) => falsey
+      (let [board [[0 1 "M"]
+                   [0 2 2]
+                   [0 1 "M"]]
+            mask [[0 1 "H"]
+                  [0 2 2]
+                  [0 1 "F"]]
+            nr 3
+            nc 3]
+        (game-over? mask) => falsey
+        (->> mask
+             (click-cell 0 2 board nr nc)
+             game-over?)
+        => truthy))
+
+(fact "game-won?"
+      (game-won? [[0]] 1 1 [[0]]) => true
+      (game-won? [["M"]] 1 1 [["H"]]) => true
+      (game-won? [["M"]] 1 1 [["F"]]) => true
+      (game-won? [[1 "M"]] 1 1 [[1 "H"]]) => true
+      (game-won? [[1 "M"]] 1 1 [[1 "F"]]) => true
+      (game-won? [[1 "M"]] 1 1 [["H" "F"]]) => false
+      (game-won? [[1 "M"]] 1 1 [[1 "B"]]) => false
+      (let [board [[0 1 "M"]
+                   [0 2 2]
+                   [0 1 "M"]]
+            mask [[0 1 "H"]
+                  [0 2 2]
+                  [0 1 "F"]]
+            nr 3
+            nc 3]
+        (game-won? board nr nc mask) => true
+        (->> mask
+             (click-cell 0 2 board nr nc)
+             (game-won? board nr nc))
+        => false
+        ))
+
 ; TODO: Write tests for:
-; click-cell
-; game-over?
-; game-won?
 ; calc-game-won
 ; calc-game-over
 
