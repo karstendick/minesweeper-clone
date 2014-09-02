@@ -1,7 +1,6 @@
 (ns minesweeper-clone.core-test
   (:require [minesweeper-clone.core :refer :all]
-            [midje.sweet :refer :all]
-            [midje.util :refer [testable-privates]]))
+            [midje.sweet :refer :all]))
 
 (fact "make-mask"
       (let [num-rows 3

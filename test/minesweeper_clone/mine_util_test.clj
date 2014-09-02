@@ -1,11 +1,6 @@
 (ns minesweeper-clone.mine-util-test
   (:require [minesweeper-clone.mine-util :refer :all]
-            [midje.sweet :refer :all]
-            [midje.util :refer [testable-privates]]))
-
-(comment (testable-privates minesweeper-clone.mine-util
-                   calc-board))
-
+            [midje.sweet :refer :all]))
 
 (fact "in-bounds?"
       (let [[num-rows num-cols] [9 9]]
