@@ -11,7 +11,8 @@
                                                  calc-board
                                                  map-mask
                                                  reveal-mines
-                                                 reveal-incorrect-flags]]))
+                                                 reveal-incorrect-flags]]
+            [minesweeper-clone.logic :refer [run-logic]]))
 
 ;; [num-rows num-cols num-mines]
 (def board-defaults {:beginner     [9 9 10]

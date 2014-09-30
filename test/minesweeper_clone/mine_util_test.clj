@@ -48,7 +48,9 @@
                               [0 0 0 0 0 1 2 3 2]
                               [0 0 0 0 0 0 1 "M" 2]
                               [0 0 0 0 0 0 1 2 "M"]]]
-        (calc-board num-rows num-cols board) => calculated-board)
+        (calc-board num-rows num-cols board) => calculated-board
+        (fact "is idempotent"
+              (calc-board num-rows num-cols calculated-board) => calculated-board))
       (let [[num-rows num-cols] [3 3]
             board [["M" "M" "M"]
                    ["M" 0 "M"]
