@@ -27,6 +27,15 @@
         (match-mask (next vars) (next maskv))))
     succeed))
 
+
+; TODO: Add support for flagged cells
+(defn make-vars
+  [maskv]
+  (map #(if (= "H" %)
+          lvar
+          %)
+       maskv))
+
 ;; TODO: don't generate lvars for revealed cells (or correctly flagged ones?)
 
 (defn gen-matching-boards
@@ -34,6 +43,9 @@
   (let [num-cells (total-cells num-rows num-cols)
         maskv (flatten mask)
         vars (repeatedly num-cells lvar)
+        ; TODO: make this work
+        ;vars (make-vars maskv)
+        _ (println "vars: " vars)
         vars-board (vector->board vars num-rows num-cols)
         ]
     (run* [q] ;;try run* or run 1
@@ -42,7 +54,8 @@
           (match-mask vars maskv)
           (!= (get-in vars-board [r c]) "M")
           (project [vars]
-                   (let [vars-board (vector->board vars num-rows num-cols)]
+                   (let [_ (println "project vars: " vars)
+                         vars-board (vector->board vars num-rows num-cols)]
                      (== num-mines (count (filter #{"M"} vars)))
                      (== vars-board
                          (calc-board num-rows num-cols vars-board))
