@@ -36,10 +36,12 @@
           (project [row-var col-var]
                    ; Place the mine in an unrevealed cell
                    (== (get-in mask [row-var col-var]) "H")
+                   ; Don't place the mine on top of another mine
+                   (!= (get-in board [row-var col-var]) "M")
                    ; Make sure the revealed cells match the new board
-                   (let [var-boardv (->> (assoc-in board [row-var col-var] "M")
-                                        (calc-board num-rows num-cols)
-                                        flatten)
+                   (let [var-board (->> (assoc-in board [row-var col-var] "M")
+                                        (calc-board num-rows num-cols))
+                         var-boardv (flatten var-board)
                          ; _ (println)
                          ; _ (println row-var col-var)
                          ; _ (println "var-boardv: " var-boardv)
