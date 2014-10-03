@@ -17,14 +17,14 @@
                                                  reveal-incorrect-flags]]))
 
 (defn match-mask
-  [vars maskv]
-  (if (seq vars)
+  [boardv maskv]
+  (if (seq boardv)
     (let [m (first maskv)]
       (all
         (if-not (= "H" m)
-          (== (first vars) m)
+          (== (first boardv) m)
           succeed)
-        (match-mask (next vars) (next maskv))))
+        (match-mask (next boardv) (next maskv))))
     succeed))
 
 
@@ -36,18 +36,31 @@
   [[num-rows num-cols num-mines] [r c] board mask]
   (let [num-cells (total-cells num-rows num-cols)
         maskv (flatten mask)
-        vars (repeatedly 2 lvar)
+        ; TODO: don't shadow the board name like this
+        ; remove the old mine
+        board (assoc-in board [r c] 0)
         ]
-    (run* [q] ;;try run* or run 1
-          (== q vars)
-          (membero (first vars) (range num-rows))
-          (membero (second vars) (range num-cols))
+    (run* [row-var col-var] ;;try run* or run 1
+          (membero row-var (range num-rows))
+          (membero col-var (range num-cols))
           ;(match-mask vars maskv)
-          (!= vars [r c]) ; Don't place the mine back here
+          (!= [row-var col-var]
+              [r c]) ; Don't place the mine back here
 
-          (project [vars]
+
+          (project [row-var col-var]
                    ; Place the mine in an unrevealed cell
-                   (== (get-in mask vars) "H")
+                   (== (get-in mask [row-var col-var]) "H")
+                   (let [var-board (->> (assoc-in board [row-var col-var] "M")
+                                        (calc-board num-rows num-cols)
+                                        flatten)
+                         _ (println)
+                         _ (println row-var col-var)
+                         _ (println "var-board: " var-board)
+                         _ (println "maskv:     " maskv)
+                         ]
+                     (match-mask var-board maskv)
+                     )
 
                    ; (let [;_ (println "project vars: " vars)
                    ;       vars-board (vector->board vars num-rows num-cols)]
@@ -67,11 +80,13 @@
                           [2 "H"]]
                          )
   (get-new-mine-position [3 3 3]
-                       [2 2]
-                       [] ; TODO: Fill this in?
-                       [[1 "H" "H"]
-                        ["H" 3 3]
-                        ["H" "H" "H"]])
+                         [2 2]
+                         [[0 "M" "M"]
+                          [0 0 0]
+                          [0 0 "M"]]
+                         [[1 "H" "H"]
+                          ["H" 3 3]
+                          ["H" "H" "H"]])
   )
 
 
