@@ -28,52 +28,50 @@
     succeed))
 
 
-; TODO: Add support for flagged cells
-(defn make-vars
-  [maskv]
-  (map #(if (= "H" %)
-          lvar
-          %)
-       maskv))
 
-;; TODO: don't generate lvars for revealed cells (or correctly flagged ones?)
+;; TODO: should board and mask have the old values,
+;; or should we already account for changing things at clicked cell?
 
-(defn gen-matching-boards
-  [[num-rows num-cols num-mines] [r c] mask]
+(defn get-new-mine-position
+  [[num-rows num-cols num-mines] [r c] board mask]
   (let [num-cells (total-cells num-rows num-cols)
         maskv (flatten mask)
-        vars (repeatedly num-cells lvar)
-        ; TODO: make this work
-        ;vars (make-vars maskv)
-        _ (println "vars: " vars)
-        vars-board (vector->board vars num-rows num-cols)
+        vars (repeatedly 2 lvar)
         ]
     (run* [q] ;;try run* or run 1
           (== q vars)
-          (everyg #(membero % [0 1 2 3 4 5 6 7 8 "M"]) vars)
-          (match-mask vars maskv)
-          (!= (get-in vars-board [r c]) "M")
+          (membero (first vars) (range num-rows))
+          (membero (second vars) (range num-cols))
+          ;(match-mask vars maskv)
+          (!= vars [r c]) ; Don't place the mine back here
+
           (project [vars]
-                   (let [_ (println "project vars: " vars)
-                         vars-board (vector->board vars num-rows num-cols)]
-                     (== num-mines (count (filter #{"M"} vars)))
-                     (== vars-board
-                         (calc-board num-rows num-cols vars-board))
-                     ))
-          )))
+                   ; Place the mine in an unrevealed cell
+                   (== (get-in mask vars) "H")
+
+                   ; (let [;_ (println "project vars: " vars)
+                   ;       vars-board (vector->board vars num-rows num-cols)]
+                   ;   (== num-mines (count (filter #{"M"} vars)))
+                   ;   (== vars-board
+                   ;       (calc-board num-rows num-cols vars-board))
+                   ;   )
+                   ))))
 
 (defn run-logic
   []
-  (gen-matching-boards [2 2 2]
-                       [1 1]
-                       [["H" "H"]
-                        [2 "H"]])
-  ; (gen-matching-boards [3 3 3]
-  ;                      ;[2 2]
-  ;                      [0 0]
-  ;                      [[1 "H" "H"]
-  ;                       [1 3 3]
-  ;                       ["H" "H" "H"]])
+  (get-new-mine-position [2 2 2]
+                         [1 1]
+                         [[2 "M"]
+                          [2 "M"]]
+                         [["H" "H"]
+                          [2 "H"]]
+                         )
+  (get-new-mine-position [3 3 3]
+                       [2 2]
+                       [] ; TODO: Fill this in?
+                       [[1 "H" "H"]
+                        ["H" 3 3]
+                        ["H" "H" "H"]])
   )
 
 
