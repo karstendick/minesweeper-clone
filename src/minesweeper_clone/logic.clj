@@ -16,9 +16,6 @@
         (match-mask (next boardv) (next maskv))))
     succeed))
 
-;; TODO: should board and mask have the old values,
-;; or should we already account for changing things at clicked cell?
-
 (defn get-new-mine-position
   [[num-rows num-cols] [r c] board mask]
   (let [maskv (flatten mask)
