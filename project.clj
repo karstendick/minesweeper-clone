@@ -10,5 +10,4 @@
   :profiles {:dev {:dependencies [[midje "1.6.3"]]
                    :plugins [[lein-midje "3.1.3"]
                              [lein-kibit "0.0.8"]]}}
-  :repl-options {:init-ns minesweeper-clone.core}
-  )
+  :repl-options {:init-ns minesweeper-clone.core})
